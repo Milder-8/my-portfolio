@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Muhammadyunus Yunusov — Full-Stack Developer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0C10;
+    --bg-raised:#12151B;
+    --bg-raised-2:#171B22;
+    --text:#EDEBE6;
+    --text-dim:#8C939C;
+    --text-faint:#565C66;
+    --gold:#3ECF8E;
+    --gold-dim:rgba(62,207,142,.14);
+    --line:#20242C;
+    --line-soft:#1A1E25;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    position:relative;
+    overflow-x:hidden;
+  }
+  .ambient{
+    position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(ellipse 900px 520px at 20% 0%, rgba(62,207,142,.14), transparent 60%),
+      radial-gradient(ellipse 650px 500px at 100% 15%, rgba(62,207,142,.07), transparent 60%),
+      radial-gradient(ellipse 500px 400px at 50% 100%, rgba(62,207,142,.05), transparent 60%);
+    animation:drift 18s ease-in-out infinite alternate;
+  }
+  @keyframes drift{
+    0%{transform:translate(0,0) scale(1);}
+    50%{transform:translate(-2%,1.5%) scale(1.04);}
+    100%{transform:translate(2%,-1%) scale(1.02);}
+  }
+  @media (prefers-reduced-motion: reduce){ .ambient{animation:none;} }
+
+  /* 3D rotating cube */
+  .cube-stage{
+    width:170px;height:170px;margin:72px auto 0;
+    perspective:1100px;
+    position:relative;
+  }
+  .cube-stage::after{
+    content:'';position:absolute;left:50%;bottom:-18px;
+    width:110px;height:22px;transform:translateX(-50%);
+    background:radial-gradient(ellipse, rgba(0,0,0,.55), transparent 70%);
+    filter:blur(2px);
+    animation:shadowPulse 16s linear infinite;
+  }
+  @keyframes shadowPulse{
+    0%,100%{ transform:translateX(-50%) scaleX(1); opacity:.55; }
+    50%{ transform:translateX(-50%) scaleX(.82); opacity:.35; }
+  }
+  .cube{
+    width:100%;height:100%;position:relative;
+    transform-style:preserve-3d;
+    transform:rotateX(-20deg);
+    animation:cubeSpin 16s linear infinite, cubeFloat 5s ease-in-out infinite;
+  }
+  @keyframes cubeSpin{ from{ transform:rotateX(-20deg) rotateY(0deg); } to{ transform:rotateX(-20deg) rotateY(360deg); } }
+  @keyframes cubeFloat{ 0%,100%{ margin-top:0px; } 50%{ margin-top:-10px; } }
+  .cube-face{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'JetBrains Mono',monospace;font-size:13.5px;font-weight:600;
+    letter-spacing:.01em;
+    color:#06261A;
+    background:
+      linear-gradient(155deg, rgba(255,255,255,.32), rgba(255,255,255,0) 45%),
+      linear-gradient(155deg, #4FDB9C, #24A76D 75%);
+    border:1px solid rgba(150,255,205,.55);
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.16),
+      inset 0 14px 22px -14px rgba(255,255,255,.4),
+      inset 0 -16px 24px -16px rgba(4,60,38,.5);
+  }
+  .cube-face::before{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(180deg, rgba(255,255,255,.12), transparent 55%);
+  }
+  .cube-face:nth-child(1){ transform:rotateY(0deg) translateZ(var(--cz,85px)); filter:brightness(1.06); }
+  .cube-face:nth-child(2){ transform:rotateY(90deg) translateZ(var(--cz,85px)); filter:brightness(.94); }
+  .cube-face:nth-child(3){ transform:rotateY(180deg) translateZ(var(--cz,85px)); filter:brightness(.8); }
+  .cube-face:nth-child(4){ transform:rotateY(270deg) translateZ(var(--cz,85px)); filter:brightness(.94); }
+  .cube-face:nth-child(5){ transform:rotateX(90deg) translateZ(var(--cz,85px)); filter:brightness(1.14); }
+  .cube-face:nth-child(6){ transform:rotateX(-90deg) translateZ(var(--cz,85px)); filter:brightness(.72); }
+  @media (prefers-reduced-motion: reduce){ .cube{ animation:none; transform:rotateX(-20deg) rotateY(28deg); } .cube-stage::after{ animation:none; } }
+  @media (max-width:560px){ .cube-stage{ width:126px;height:126px; --cz:63px; } .cube-face{ font-size:12px; } }
+
+  /* mouse-driven 3D tilt for cards */
+  .tilt{ transform-style:preserve-3d; transition:transform .25s cubic-bezier(.2,.8,.2,1); will-change:transform; }
+  ::selection{background:var(--gold-dim);color:var(--gold);}
+  .mono{font-family:'JetBrains Mono','SF Mono',Consolas,monospace;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+  .wrap{max-width:920px;margin:0 auto;padding:0 32px;}
+  a{color:inherit;}
+  ::-webkit-scrollbar{width:10px;}
+  ::-webkit-scrollbar-track{background:var(--bg);}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;}
+
+  nav{
+    position:sticky;top:0;z-index:20;
+    background:rgba(10,12,16,.75);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line-soft);
+  }
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;}
+  .brand{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px;}
+  .brand .dot{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold);}
+  .navlinks{display:flex;gap:28px;font-size:14px;}
+  .navlinks a{color:var(--text-dim);text-decoration:none;transition:color .15s;}
+  .navlinks a:hover{color:var(--gold);}
+  @media (max-width:560px){ .navlinks{display:none;} }
+
+  header{padding:130px 0 96px;perspective:1400px;}
+  .status{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:12.5px;color:var(--text-dim);
+    border:1px solid rgba(62,207,142,.35);
+    padding:6px 12px;border-radius:100px;
+    margin-bottom:28px;
+    box-shadow:0 0 20px -6px rgba(62,207,142,.4);
+  }
+  .status .pulse{width:6px;height:6px;border-radius:50%;background:#5CE08A;position:relative;}
+  .status .pulse::after{
+    content:'';position:absolute;inset:-4px;border-radius:50%;
+    background:#5CE08A;opacity:.35;animation:ping 1.8s ease-out infinite;
+  }
+  @keyframes ping{0%{transform:scale(1);opacity:.5;}100%{transform:scale(2.6);opacity:0;}}
+
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:clamp(46px,8vw,76px);
+    font-weight:700;
+    letter-spacing:-0.02em;
+    line-height:1.05;
+    margin-bottom:20px;
+  }
+  h1 .surname{color:var(--text-dim);font-weight:500;}
+  .role{
+    font-family:'Space Grotesk',sans-serif;
+    color:var(--gold);font-size:23px;font-weight:600;margin-bottom:24px;
+    letter-spacing:-.01em;
+    text-shadow:0 0 24px rgba(62,207,142,.45);
+  }
+  .tagline{max-width:600px;color:var(--text-dim);font-size:19px;margin-bottom:42px;}
+  .tagline strong{color:var(--text);font-weight:600;}
+
+  .cta-row{display:flex;gap:14px;flex-wrap:wrap;}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:15px 28px;border-radius:10px;
+    font-size:15.5px;font-weight:600;text-decoration:none;
+    transition:transform .15s, box-shadow .15s, background .15s;
+  }
+  .btn-primary{
+    background:var(--gold);color:#08150E;
+    box-shadow:0 0 0 1px rgba(62,207,142,.3), 0 10px 30px -8px rgba(62,207,142,.55);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(62,207,142,.4), 0 14px 40px -6px rgba(62,207,142,.75);}
+  .btn-ghost{
+    border:1px solid var(--line);color:var(--text);
+    background:var(--bg-raised);
+  }
+  .btn-ghost:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-2px);}
+
+  .stats{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    border:1px solid var(--line);border-radius:14px;
+    background:var(--bg-raised);
+    margin-top:64px;overflow:hidden;
+  }
+  .stat{padding:30px 26px;border-right:1px solid var(--line);}
+  .stat:last-child{border-right:none;}
+  .stat .n{font-family:'Space Grotesk',sans-serif;font-size:34px;font-weight:700;color:var(--gold);text-shadow:0 0 18px rgba(62,207,142,.4);}
+  .stat .l{font-size:13.5px;color:var(--text-dim);margin-top:6px;}
+  @media (max-width:560px){ .stat .n{font-size:24px;} .stat{padding:18px 14px;} }
+
+  section{padding:88px 0;border-top:1px solid var(--line-soft);}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    color:var(--gold);font-size:14px;margin-bottom:12px;
+    text-shadow:0 0 16px rgba(62,207,142,.4);
+  }
+  h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:34px;font-weight:600;letter-spacing:-.01em;margin-bottom:26px;
+  }
+  .lead{color:var(--text-dim);font-size:17px;max-width:620px;margin-bottom:36px;}
+
+  .about-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:32px;align-items:start;}
+  @media (max-width:700px){ .about-grid{grid-template-columns:1fr;} }
+  .about-text p{color:var(--text-dim);font-size:15.5px;margin-bottom:14px;}
+  .about-text strong{color:var(--text);}
+
+  .terminal{
+    background:var(--bg-raised);border:1px solid var(--line);
+    border-radius:10px;overflow:hidden;
+    box-shadow:0 20px 50px -20px rgba(0,0,0,.6);
+    transition:box-shadow .3s ease, border-color .3s ease;
+  }
+  .terminal:hover{
+    border-color:rgba(62,207,142,.4);
+    box-shadow:0 20px 50px -20px rgba(0,0,0,.6), 0 0 40px -6px rgba(62,207,142,.25);
+  }
+  .term-bar{
+    display:flex;align-items:center;gap:6px;
+    padding:11px 14px;border-bottom:1px solid var(--line);
+    background:var(--bg-raised-2);
+  }
+  .term-bar span{width:10px;height:10px;border-radius:50%;}
+  .term-bar span:nth-child(1){background:#FF5F57;}
+  .term-bar span:nth-child(2){background:#FEBC2E;}
+  .term-bar span:nth-child(3){background:#28C840;}
+  .term-body{padding:18px 20px;font-family:'JetBrains Mono',monospace;font-size:12.8px;line-height:1.9;}
+  .term-body .k{color:#7AA2F7;}
+  .term-body .s{color:#9ECE6A;}
+  .term-body .c{color:var(--text-faint);}
+  .term-body .p{color:var(--gold);}
+
+  .skill-groups{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  @media (max-width:560px){ .skill-groups{grid-template-columns:1fr;} }
+  .skill-group .gt{font-size:12.5px;color:var(--text-faint);margin-bottom:10px;font-family:'JetBrains Mono',monospace;}
+  .skills{display:flex;flex-wrap:wrap;gap:8px;}
+  .skill{
+    border:1px solid var(--line);background:var(--bg-raised);
+    padding:7px 13px;border-radius:6px;font-size:13.5px;color:var(--text-dim);
+    transition:border-color .15s, color .15s;
+  }
+  .skill:hover{border-color:var(--gold);color:var(--gold);box-shadow:0 0 16px -2px rgba(62,207,142,.5);}
+
+  .project{
+    position:relative;
+    background:var(--bg-raised);border:1px solid var(--line);
+    border-radius:12px;padding:0;overflow:hidden;
+    box-shadow:0 24px 60px -30px rgba(0,0,0,.7);
+  }
+  .project::before{
+    content:'';position:absolute;inset:-1px;border-radius:12px;padding:1px;
+    background:conic-gradient(from var(--ang,0deg), transparent 0%, rgba(62,207,142,.7) 8%, transparent 18%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude;
+    animation:spin 4s linear infinite;
+    opacity:.8;
+  }
+  @keyframes spin{ to{ --ang:360deg; } }
+  @property --ang{ syntax:'<angle>'; inherits:false; initial-value:0deg; }
+  .project-tag{
+    font-size:11.5px;font-family:'JetBrains Mono',monospace;
+    color:var(--gold);border:1px solid rgba(62,207,142,.3);
+    padding:3px 9px;border-radius:100px;
+    position:relative;overflow:hidden;
+  }
+  .project-tag::after{
+    content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;
+    background:linear-gradient(120deg, transparent, rgba(62,207,142,.5), transparent);
+    animation:shimmer 2.6s ease-in-out infinite;
+  }
+  @keyframes shimmer{ 0%{left:-60%;} 100%{left:130%;} }
+  .project-top{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    padding:26px 28px 0;
+    position:relative;
+    flex-wrap:wrap;gap:10px;
+  }
+  .project-name{font-family:'Space Grotesk',sans-serif;font-size:21px;font-weight:600;}
+  .project-desc{color:var(--text-dim);font-size:15px;padding:12px 28px 20px;max-width:520px;}
+  .stack{display:flex;flex-wrap:wrap;gap:8px;padding:0 28px 22px;}
+  .stack span{font-size:12px;color:var(--text-dim);background:var(--bg-raised-2);border:1px solid var(--line);padding:4px 10px;border-radius:4px;font-family:'JetBrains Mono',monospace;}
+  .project-foot{
+    display:flex;justify-content:space-between;align-items:center;
+    border-top:1px solid var(--line);padding:16px 28px;
+    background:var(--bg-raised-2);
+    flex-wrap:wrap;gap:10px;
+  }
+  .project-foot a{font-size:14px;text-decoration:none;color:var(--text);display:inline-flex;align-items:center;gap:6px;font-weight:600;}
+  .project-foot a:hover{color:var(--gold);}
+  .project-foot .status2{font-size:12.5px;color:var(--text-faint);font-family:'JetBrains Mono',monospace;}
+
+  .contact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  @media (max-width:700px){ .contact-grid{grid-template-columns:1fr;} }
+  .contact-card{
+    display:flex;align-items:center;gap:14px;
+    border:1px solid var(--line);background:var(--bg-raised);
+    border-radius:10px;padding:16px 18px;text-decoration:none;
+    transition:border-color .15s, transform .15s;
+  }
+  .contact-card:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 10px 30px -10px rgba(62,207,142,.4);}
+  .contact-icon{
+    width:38px;height:38px;border-radius:8px;background:var(--bg-raised-2);
+    display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;
+  }
+  .contact-meta .l{font-size:11.5px;color:var(--text-faint);font-family:'JetBrains Mono',monospace;}
+  .contact-meta .v{font-size:14.5px;color:var(--text);font-weight:600;}
+
+  footer{padding:40px 0 60px;display:flex;justify-content:space-between;align-items:center;color:var(--text-faint);font-size:13px;flex-wrap:wrap;gap:10px;}
+
+  /* small-screen refinements */
+  @media (max-width:480px){
+    .wrap{padding:0 20px;}
+    header{padding:88px 0 56px;}
+    .role{font-size:18px;}
+    .tagline{font-size:15.5px;margin-bottom:32px;}
+    .btn{padding:13px 22px;font-size:14px;}
+    .stats{grid-template-columns:1fr;margin-top:44px;}
+    .stat{border-right:none;border-bottom:1px solid var(--line);text-align:left;}
+    .stat:last-child{border-bottom:none;}
+    section{padding:56px 0;}
+    h2{font-size:26px;}
+    .lead{font-size:15px;}
+    .project-desc{padding:12px 20px 18px;}
+    .project-top{padding:22px 20px 0;}
+    .stack{padding:0 20px 18px;}
+    .project-foot{padding:14px 20px;}
+    .cube-stage{margin-top:52px;}
+  }
+  @media (max-width:360px){
+    h1{font-size:34px;}
+    .cube-stage{width:100px;height:100px;--cz:50px;}
+    .cube-face{font-size:10.5px;}
+  }
+
+  .reveal{opacity:0;transform:translateY(14px);animation:rise .7s ease forwards;}
+  @keyframes rise{to{opacity:1;transform:translateY(0);}}
+
+  /* scroll-in reveal for sections */
+  .sr{opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.16,.8,.3,1), transform .7s cubic-bezier(.16,.8,.3,1);}
+  .sr.in{opacity:1;transform:translateY(0);}
+  .sr-stagger.in .sr-child{opacity:1;transform:translateY(0);}
+  .sr-child{opacity:0;transform:translateY(18px);transition:opacity .6s cubic-bezier(.16,.8,.3,1), transform .6s cubic-bezier(.16,.8,.3,1);}
+  .sr-child:nth-child(1){transition-delay:.05s;}
+  .sr-child:nth-child(2){transition-delay:.12s;}
+  .sr-child:nth-child(3){transition-delay:.19s;}
+  .sr-child:nth-child(4){transition-delay:.26s;}
+
+  @media (prefers-reduced-motion: reduce){
+    .reveal{animation:none;opacity:1;transform:none;}
+    .status .pulse::after{animation:none;}
+    .sr, .sr-child{opacity:1;transform:none;transition:none;}
+  }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+
+<nav>
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span>M. Yunusov</div>
+    <div class="navlinks">
+      <a href="#about">About</a>
+      <a href="#skills">Skills</a>
+      <a href="#projects">Projects</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<header class="wrap">
+  <div class="status reveal"><span class="pulse"></span> Available for new projects</div>
+  <h1 class="reveal" style="animation-delay:.05s">Muhammadyunus <span class="surname">Yunusov</span></h1>
+  <div class="role reveal" style="animation-delay:.1s">Full-Stack Developer</div>
+  <p class="tagline reveal" style="animation-delay:.15s">
+    I turn ideas into <strong>working software</strong> — clean architecture,
+    real deadlines, products people actually use.
+  </p>
+  <div class="cta-row reveal" style="animation-delay:.2s">
+    <a class="btn btn-primary" href="#projects">View Work</a>
+    <a class="btn btn-ghost" href="#contact">Get in Touch</a>
+  </div>
+
+  <div class="stats reveal" style="animation-delay:.25s">
+    <div class="stat"><div class="n" data-count="1" data-suffix="">0</div><div class="l">Year building</div></div>
+    <div class="stat"><div class="n" data-count="1" data-suffix="">0</div><div class="l">Project shipped</div></div>
+    <div class="stat"><div class="n" data-count="100" data-suffix="%">0</div><div class="l">Focused on results</div></div>
+  </div>
+
+  <div class="cube-stage reveal" style="animation-delay:.32s">
+    <div class="cube">
+      <div class="cube-face">React</div>
+      <div class="cube-face">Node.js</div>
+      <div class="cube-face">TypeScript</div>
+      <div class="cube-face">SQL</div>
+      <div class="cube-face">Python</div>
+      <div class="cube-face">Git</div>
+    </div>
+  </div>
+</header>
+
+<section id="about" class="wrap sr">
+  <div class="eyebrow">01 — About</div>
+  <h2>How I work</h2>
+  <div class="about-grid">
+    <div class="about-text">
+      <p>I care about <strong>shipping</strong> more than polishing demos forever.
+      Every project starts with understanding the real problem, then building
+      the simplest thing that solves it well.</p>
+      <p>Comfortable across the stack — from database design to the pixels
+      the user actually touches — and I write code meant to be maintained,
+      not just to run once.</p>
+    </div>
+    <div class="terminal">
+      <div class="term-bar"><span></span><span></span><span></span></div>
+      <div class="term-body" id="termBody" data-lines='[
+          {"t":"prompt","v":"whoami"},
+          {"t":"out-s","v":"muhammadyunus_yunusov"},
+          {"t":"br"},
+          {"t":"prompt","v":"cat focus.txt"},
+          {"t":"out-p","v":"backend · frontend · shipping fast"},
+          {"t":"br"},
+          {"t":"prompt","v":"status"},
+          {"t":"out-s","v":"✓ open to work"}
+        ]'></div>
+    </div>
+  </div>
+</section>
+
+<section id="skills" class="wrap sr">
+  <div class="eyebrow">02 — Skills</div>
+  <h2>Tools I build with</h2>
+  <div class="skill-groups sr-stagger">
+    <div class="skill-group sr-child">
+      <div class="gt">LANGUAGES</div>
+      <div class="skills">
+        <span class="skill">JavaScript</span>
+        <span class="skill">TypeScript</span>
+        <span class="skill">Python</span>
+        <span class="skill">SQL</span>
+      </div>
+    </div>
+    <div class="skill-group sr-child">
+      <div class="gt">STACK</div>
+      <div class="skills">
+        <span class="skill">React</span>
+        <span class="skill">Node.js</span>
+        <span class="skill">PostgreSQL</span>
+        <span class="skill">Git</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="projects" class="wrap sr">
+  <div class="eyebrow">03 — Projects</div>
+  <h2>Selected work</h2>
+  <div class="project tilt">
+    <div class="project-top">
+      <div class="project-name">Milder Cars</div>
+      <div class="project-tag">FEATURED</div>
+    </div>
+    <div class="project-desc">
+      A platform for browsing, comparing and managing car listings — built to
+      make finding the right vehicle fast and straightforward, from search to
+      contact.
+    </div>
+    <div class="stack">
+      <span>React</span><span>Node.js</span><span>PostgreSQL</span>
+    </div>
+    <div class="project-foot">
+      <a href="#">View project →</a>
+      <span class="status2">// in production</span>
+    </div>
+  </div>
+</section>
+
+<section id="contact" class="wrap sr">
+  <div class="eyebrow">04 — Contact</div>
+  <h2>Let's build something</h2>
+  <p class="lead">Open to freelance work, collaborations, and interesting problems. Reach out on whichever you prefer.</p>
+  <div class="contact-grid sr-stagger">
+    <a class="contact-card sr-child tilt" href="https://t.me/M_yunus8v" target="_blank">
+      <div class="contact-icon">✈️</div>
+      <div class="contact-meta"><div class="l">TELEGRAM</div><div class="v">@M_yunus8v</div></div>
+    </a>
+    <a class="contact-card sr-child tilt" href="mailto:yunusov88yunus@gmail.com">
+      <div class="contact-icon">✉️</div>
+      <div class="contact-meta"><div class="l">EMAIL</div><div class="v">yunusov88yunus@gmail.com</div></div>
+    </a>
+    <a class="contact-card sr-child tilt" href="https://github.com/Milder-8" target="_blank">
+      <div class="contact-icon">⌨️</div>
+      <div class="contact-meta"><div class="l">GITHUB</div><div class="v">github.com/Milder-8</div></div>
+    </a>
+  </div>
+</section>
+
+<footer class="wrap">
+  <div class="mono">© 2026 Muhammadyunus Yunusov</div>
+  <div class="mono">Built with care.</div>
+</footer>
+
+<script>
+  (function(){
+    var els = document.querySelectorAll('.sr, .sr-stagger');
+    if(!('IntersectionObserver' in window)){
+      els.forEach(function(el){ el.classList.add('in'); });
+    } else {
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting){
+            entry.target.classList.add('in');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+      els.forEach(function(el){ io.observe(el); });
+    }
+
+    // count-up stats
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var counters = document.querySelectorAll('[data-count]');
+    function animateCount(el){
+      var target = parseInt(el.getAttribute('data-count'), 10);
+      var suffix = el.getAttribute('data-suffix') || '';
+      if(reduceMotion){ el.textContent = target + suffix; return; }
+      var start = performance.now(), dur = 1100;
+      function step(now){
+        var p = Math.min((now - start) / dur, 1);
+        var eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased) + suffix;
+        if(p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    if(counters.length){
+      var cio = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting){ animateCount(entry.target); cio.unobserve(entry.target); }
+        });
+      }, { threshold: 0.6 });
+      counters.forEach(function(el){ cio.observe(el); });
+    }
+
+    // terminal typing effect
+    var term = document.getElementById('termBody');
+    if(term){
+      var lines;
+      try{ lines = JSON.parse(term.getAttribute('data-lines')); } catch(e){ lines = []; }
+      function renderStatic(){
+        term.innerHTML = lines.map(function(l){
+          if(l.t === 'br') return '<div>&nbsp;</div>';
+          if(l.t === 'prompt') return '<div><span class="c">$</span> <span class="k">'+l.v+'</span></div>';
+          if(l.t === 'out-s') return '<div class="s">'+l.v+'</div>';
+          if(l.t === 'out-p') return '<div class="p">'+l.v+'</div>';
+          return '';
+        }).join('');
+      }
+      if(reduceMotion || !('IntersectionObserver' in window)){
+        renderStatic();
+      } else {
+        term.innerHTML = '';
+        var typed = false;
+        var tio = new IntersectionObserver(function(entries){
+          entries.forEach(function(entry){
+            if(entry.isIntersecting && !typed){
+              typed = true;
+              typeLines();
+              tio.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.4 });
+        tio.observe(term);
+
+        function typeLines(){
+          var li = 0;
+          function nextLine(){
+            if(li >= lines.length) return;
+            var l = lines[li];
+            if(l.t === 'br'){
+              var d = document.createElement('div'); d.innerHTML = '&nbsp;';
+              term.appendChild(d); li++; setTimeout(nextLine, 120); return;
+            }
+            if(l.t === 'prompt'){
+              var row = document.createElement('div');
+              var dollar = document.createElement('span'); dollar.className='c'; dollar.textContent='$ ';
+              var cmd = document.createElement('span'); cmd.className='k';
+              row.appendChild(dollar); row.appendChild(cmd); term.appendChild(row);
+              typeChars(cmd, l.v, function(){ li++; setTimeout(nextLine, 220); });
+              return;
+            }
+            var row2 = document.createElement('div');
+            row2.className = l.t === 'out-s' ? 's' : 'p';
+            term.appendChild(row2);
+            typeChars(row2, l.v, function(){ li++; setTimeout(nextLine, 260); });
+          }
+          function typeChars(node, text, done){
+            var i = 0;
+            (function tick(){
+              if(i <= text.length){
+                node.textContent = text.slice(0, i);
+                i++;
+                setTimeout(tick, 22);
+              } else { done(); }
+            })();
+          }
+          nextLine();
+        }
+      }
+    }
+    // 3D mouse tilt
+    var tiltEls = document.querySelectorAll('.tilt');
+    if(!reduceMotion && window.matchMedia('(hover: hover)').matches){
+      tiltEls.forEach(function(el){
+        var rect;
+        el.addEventListener('pointerenter', function(){ rect = el.getBoundingClientRect(); });
+        el.addEventListener('pointermove', function(e){
+          if(!rect) rect = el.getBoundingClientRect();
+          var px = (e.clientX - rect.left) / rect.width;
+          var py = (e.clientY - rect.top) / rect.height;
+          var rx = (py - 0.5) * -10;
+          var ry = (px - 0.5) * 12;
+          el.style.transform = 'perspective(700px) rotateX('+rx+'deg) rotateY('+ry+'deg) translateY(-4px)';
+        });
+        el.addEventListener('pointerleave', function(){
+          el.style.transform = '';
+        });
+      });
+    }
+  })();
+</script>
+</body>
+</html>
